@@ -1,42 +1,79 @@
-from product import Product
+import json
+from datetime import datetime
+
 
 class Transaction:
-    def __init__(self):
-        self.items = [] 
+    """
+    Class untuk menangani keranjang belanja dan checkout.
+    Menggunakan konsep AGGREGATION (Transaction punya daftar items).
+    """
+
+    def __init__(self, log_filename="transactions.json"):
+        self.items = []  # List tuple (Product Object, quantity)
         self.total = 0
+        self.log_filename = log_filename
 
-    def additem(self, product, quantity):
-        if product is None:
-            print("Product not found")
-            return
-
+    def add_item(self, product, quantity):
+        """Menambah barang ke keranjang (Belum mengurangi stok database)"""
         if quantity <= 0:
-            print("Quantity must be more than 0.")
-            return
+            raise ValueError("Jumlah beli harus positif")
 
-        previous_stock = product.stock
+        # Validasi stok sementara
+        if quantity > product.stock:
+            raise ValueError(f"Stok tidak cukup. Sisa: {product.stock}")
 
-        product.reducestock(quantity)
-
-        if product.stock == previous_stock:
-            print("Stock has not changed due to a problem beforehand.")
-            return
-
-        self.items.append((product, quantity))
+        self.items.append({"product": product, "qty": quantity})
         self.total += product.price * quantity
-        print("Item has been added to transaction.")
 
-    def calculatetotal(self):
-        return self.total
-
-    def printreceipt(self):
-        print("\n     RECEIPT     ")
+    def checkout(self, inventory_system):
+        """
+        Finalisasi transaksi:
+        1. Kurangi stok real di inventory.
+        2. Simpan log transaksi ke JSON.
+        """
         if not self.items:
-            print("No items are in this transaction.")
-        else:
-            for product, quantity in self.items:
-                line_total = product.price * quantity
-                print(f"{product.name} x{quantity} = {line_total}")
-            print(" ")
-            print(f"TOTAL: {self.total}")
-        print("\n")
+            raise ValueError("Keranjang kosong")
+
+        # 1. Kurangi Stok
+        for item in self.items:
+            prod = item["product"]
+            qty = item["qty"]
+            # Memanggil fungsi update_stock di inventory (yang akan save ke JSON)
+            inventory_system.update_stock(prod.product_id, -qty)
+
+        # 2. Simpan Log Transaksi
+        self.save_transaction_log()
+
+        # Reset keranjang
+        self.items = []
+        self.total = 0
+        return "Transaksi Berhasil!"
+
+    def save_transaction_log(self):
+        """Menyimpan riwayat transaksi ke file JSON"""
+        log_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "total_amount": self.total,
+            "items": [
+                {
+                    "product_id": item["product"].product_id,
+                    "product_name": item["product"].name,
+                    "quantity": item["qty"],
+                    "subtotal": item["product"].price * item["qty"]
+                }
+                for item in self.items
+            ]
+        }
+
+        # Baca log lama, tambah log baru, simpan ulang
+        existing_logs = []
+        try:
+            with open(self.log_filename, 'r') as f:
+                existing_logs = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            pass
+
+        existing_logs.append(log_entry)
+
+        with open(self.log_filename, 'w') as f:
+            json.dump(existing_logs, f, indent=4)

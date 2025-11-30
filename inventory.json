@@ -1,0 +1,54 @@
+[
+    {
+        "type": "NonPerishable",
+        "id": "1001",
+        "name": "Indomie Goreng Original",
+        "price": 3500,
+        "stock": 150
+    },
+    {
+        "type": "NonPerishable",
+        "id": "1002",
+        "name": "Air Mineral Aqua 600ml",
+        "price": 4000,
+        "stock": 75
+    },
+    {
+        "type": "NonPerishable",
+        "id": "1003",
+        "name": "Sabun Mandi Lifebuoy",
+        "price": 5500,
+        "stock": 40
+    },
+    {
+        "type": "NonPerishable",
+        "id": "1004",
+        "name": "Buku Tulis Sidu 38 Lembar",
+        "price": 5000,
+        "stock": 100
+    },
+    {
+        "type": "Perishable",
+        "id": "2001",
+        "name": "Sari Roti Tawar Kupas",
+        "price": 18500,
+        "stock": 15,
+        "expiry_date": "2025-12-05"
+    },
+    {
+        "type": "Perishable",
+        "id": "2002",
+        "name": "Susu Ultra Milk Coklat 250ml",
+        "price": 7500,
+        "stock": 24,
+        "expiry_date": "2026-03-10"
+    },
+    {
+        "type": "Perishable",
+        "id": "2003",
+        "name": "Telur Ayam Negeri (1 Pack)",
+        "price": 28000,
+        "stock": 10,
+        "expiry_date": "2025-12-20"
+    }
+]

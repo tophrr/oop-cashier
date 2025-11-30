@@ -58,6 +58,7 @@ class Inventory:
             return  # Jika file belum ada, biarkan kosong
 
         try:
+            self.products = {} # Reset inventory sebelum muat ulang
             with open(self.filename, 'r') as f:
                 data_list = json.load(f)
                 for item in data_list:

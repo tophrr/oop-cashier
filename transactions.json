@@ -1,0 +1,56 @@
+[
+    {
+        "timestamp": "2025-11-28 09:15:30",
+        "total_amount": 25500,
+        "items": [
+            {
+                "product_id": "1001",
+                "product_name": "Indomie Goreng Original",
+                "quantity": 5,
+                "subtotal": 17500
+            },
+            {
+                "product_id": "1002",
+                "product_name": "Air Mineral Aqua 600ml",
+                "quantity": 2,
+                "subtotal": 8000
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-11-29 14:20:10",
+        "total_amount": 45000,
+        "items": [
+            {
+                "product_id": "2001",
+                "product_name": "Sari Roti Tawar Kupas",
+                "quantity": 1,
+                "subtotal": 18500
+            },
+            {
+                "product_id": "2003",
+                "product_name": "Telur Ayam Negeri (1 Pack)",
+                "quantity": 1,
+                "subtotal": 28000
+            },
+            {
+                "product_id": "1001",
+                "product_name": "Indomie Goreng Original",
+                "quantity": -1,
+                "subtotal": -3500
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-11-30 18:45:55",
+        "total_amount": 20000,
+        "items": [
+            {
+                "product_id": "1004",
+                "product_name": "Buku Tulis Sidu 38 Lembar",
+                "quantity": 4,
+                "subtotal": 20000
+            }
+        ]
+    }
+]

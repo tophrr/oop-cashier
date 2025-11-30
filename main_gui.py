@@ -20,9 +20,12 @@ class StoreApp:
         self.tabs = ttk.Notebook(root)
         self.tab_inventory = ttk.Frame(self.tabs)
         self.tab_cashier = ttk.Frame(self.tabs)
+        self.tab_history = ttk.Frame(self.tabs)
 
-        self.tabs.add(self.tab_inventory, text="Manajemen Stok (Inventory)")
-        self.tabs.add(self.tab_cashier, text="Mesin Kasir (Transaksi)")
+        self.tabs.add(self.tab_inventory, text="Manajemen Stok")
+        self.tabs.add(self.tab_cashier, text="Mesin Kasir")
+        self.tabs.add(self.tab_history, text="Riwayat Transaksi")
+
         self.tabs.pack(expand=1, fill="both")
 
         # Render UI
@@ -46,6 +49,7 @@ class StoreApp:
 
         # Meletakkan footer di pojok kanan bawah
         self.lbl_footer.place(relx=1.0, rely=1.0, anchor="se", x=-10, y=-5)
+        self.setup_history_ui()
 
     def setup_inventory_ui(self):
         # Bagian input (Form Tambah Produk)
@@ -156,7 +160,30 @@ class StoreApp:
         ttk.Button(self.tab_cashier, text="BAYAR (CHECKOUT)",
                    command=self.checkout_action).pack(pady=10, ipadx=20)
 
-    # LOGIC ACTIONS
+    def setup_history_ui(self):
+        # Tombol Refresh
+        frame_top = ttk.Frame(self.tab_history)
+        frame_top.pack(fill="x", padx=10, pady=10)
+        ttk.Button(frame_top, text="Muat Ulang Riwayat",
+                   command=self.refresh_history_table).pack(side="left")
+
+        # Tabel History
+        # Kolom 'Detail' akan diisi string panjang (misal "Buku x2, Pensil x1")
+        self.hist_tree = ttk.Treeview(self.tab_history, columns=(
+            "Waktu", "Detail", "Total"), show="headings")
+        self.hist_tree.heading("Waktu", text="Waktu Transaksi")
+        self.hist_tree.heading("Detail", text="Detail Barang Belanjaan")
+        self.hist_tree.heading("Total", text="Total Bayar (Rp)")
+
+        self.hist_tree.column("Waktu", width=150)
+        # Dibuat lebar agar muat banyak text
+        self.hist_tree.column("Detail", width=500)
+        self.hist_tree.column("Total", width=120)
+
+        self.hist_tree.pack(fill="both", expand=True, padx=10, pady=(10, 80))
+
+        # Load data pertama kali
+        self.refresh_history_table()
 
     def toggle_expiry_input(self, event):
         """Mengaktifkan/mematikan input tanggal berdasarkan pilihan Combobox"""
@@ -280,6 +307,25 @@ class StoreApp:
         except Exception as e:
             messagebox.showerror("Gagal Checkout", str(e))
 
+    def refresh_history_table(self):
+        """Mengambil data dari JSON log dan menampilkannya di tabel."""
+        # Hapus data lama
+        for item in self.hist_tree.get_children():
+            self.hist_tree.delete(item)
+        
+        # Ambil data via static method di Transaction
+        data = Transaction.get_history_log()
+        
+        # Loop dari yang terbaru (reverse)
+        for log in reversed(data):
+            # Format items menjadi string satu baris: "Pensil (x2), Buku (x1)"
+            item_details = ", ".join([f"{i['product_name']} (x{i['quantity']})" for i in log['items']])
+            
+            self.hist_tree.insert("", "end", values=(
+                log['timestamp'],
+                item_details,
+                f"Rp {log['total_amount']}"
+            ))
 
 if __name__ == "__main__":
     root = tk.Tk()

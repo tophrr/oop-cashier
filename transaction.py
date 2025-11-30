@@ -1,11 +1,12 @@
 import json
+import os
 from datetime import datetime
 
 
 class Transaction:
     """
     Class untuk menangani keranjang belanja dan checkout.
-    Menggunakan konsep AGGREGATION (Transaction punya daftar items).
+    Menggunakan konsep Aggregation (Transaction punya daftar items).
     """
 
     def __init__(self, log_filename="transactions.json"):
@@ -26,11 +27,6 @@ class Transaction:
         self.total += product.price * quantity
 
     def checkout(self, inventory_system):
-        """
-        Finalisasi transaksi:
-        1. Kurangi stok real di inventory.
-        2. Simpan log transaksi ke JSON.
-        """
         if not self.items:
             raise ValueError("Keranjang kosong")
 
@@ -38,7 +34,6 @@ class Transaction:
         for item in self.items:
             prod = item["product"]
             qty = item["qty"]
-            # Memanggil fungsi update_stock di inventory (yang akan save ke JSON)
             inventory_system.update_stock(prod.product_id, -qty)
 
         # 2. Simpan Log Transaksi
@@ -68,8 +63,9 @@ class Transaction:
         # Baca log lama, tambah log baru, simpan ulang
         existing_logs = []
         try:
-            with open(self.log_filename, 'r') as f:
-                existing_logs = json.load(f)
+            if os.path.exists(self.log_filename):
+                with open(self.log_filename, 'r') as f:
+                    existing_logs = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             pass
 
@@ -77,3 +73,15 @@ class Transaction:
 
         with open(self.log_filename, 'w') as f:
             json.dump(existing_logs, f, indent=4)
+
+    @staticmethod
+    def get_history_log(filename="transactions.json"):
+        """Membaca seluruh log transaksi dari JSON"""
+        if not os.path.exists(filename):
+            return []
+
+        try:
+            with open(filename, 'r') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return []

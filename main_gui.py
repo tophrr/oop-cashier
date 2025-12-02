@@ -144,21 +144,41 @@ class StoreApp:
         ttk.Button(frame_trans, text="Tambah ke Keranjang",
                    command=self.add_to_cart_action).pack(side="left", padx=10)
 
-        # Tabel Keranjang
+        # Tabel Keranjang dengan kolom Aksi
         self.cart_tree = ttk.Treeview(self.tab_cashier, columns=(
-            "Nama", "Qty", "Subtotal"), show="headings")
+            "ID", "Nama", "Qty", "Subtotal"), show="headings")
+        self.cart_tree.heading("ID", text="ID Produk")
         self.cart_tree.heading("Nama", text="Nama Barang")
         self.cart_tree.heading("Qty", text="Jumlah")
         self.cart_tree.heading("Subtotal", text="Subtotal")
+        self.cart_tree.column("ID", width=100)
+        self.cart_tree.column("Nama", width=200)
+        self.cart_tree.column("Qty", width=80)
+        self.cart_tree.column("Subtotal", width=120)
         self.cart_tree.pack(fill="both", expand=True, padx=10)
+
+        # Frame untuk tombol aksi keranjang
+        frame_cart_actions = ttk.Frame(self.tab_cashier)
+        frame_cart_actions.pack(fill="x", padx=10, pady=5)
+
+        ttk.Button(frame_cart_actions, text="Kurangi Jumlah (-1)",
+                   command=self.decrease_cart_item).pack(side="left", padx=5)
+        ttk.Button(frame_cart_actions, text="Hapus Item",
+                   command=self.remove_cart_item).pack(side="left", padx=5)
 
         # Total & Checkout
         self.lbl_total = ttk.Label(
             self.tab_cashier, text="Total: Rp 0", font=("Arial", 14, "bold"))
         self.lbl_total.pack(pady=10)
 
-        ttk.Button(self.tab_cashier, text="BAYAR (CHECKOUT)",
-                   command=self.checkout_action).pack(pady=10, ipadx=20)
+        # Frame untuk tombol checkout dan batal
+        frame_checkout = ttk.Frame(self.tab_cashier)
+        frame_checkout.pack(pady=10)
+
+        ttk.Button(frame_checkout, text="BAYAR (CHECKOUT)",
+                   command=self.checkout_action).pack(side="left", padx=10, ipadx=20)
+        ttk.Button(frame_checkout, text="BATALKAN TRANSAKSI",
+                   command=self.cancel_transaction).pack(side="left", padx=10, ipadx=10)
 
     def setup_history_ui(self):
         # Tombol Refresh
@@ -284,12 +304,92 @@ class StoreApp:
 
             # Update Tampilan Keranjang
             self.cart_tree.insert("", "end", values=(
-                prod.name, qty, prod.price * qty))
+                prod.product_id, prod.name, qty, prod.price * qty))
             self.lbl_total.config(
                 text=f"Total: Rp {self.current_transaction.total}")
+            
+            # Clear input fields
+            self.trans_id.delete(0, tk.END)
+            self.trans_qty.delete(0, tk.END)
 
         except Exception as e:
             messagebox.showerror("Gagal Tambah", str(e))
+
+    def decrease_cart_item(self):
+        """Mengurangi jumlah item yang dipilih di keranjang sebanyak 1"""
+        selected = self.cart_tree.selection()
+        if not selected:
+            messagebox.showwarning("Peringatan", "Pilih item yang ingin dikurangi!")
+            return
+        
+        item_id = selected[0]
+        values = self.cart_tree.item(item_id, 'values')
+        pid = values[0]  # ID Produk
+        current_qty = int(values[2])  # Jumlah saat ini
+        
+        if current_qty <= 1:
+            # Jika jumlah 1, hapus item dari keranjang
+            self.remove_cart_item()
+            return
+        
+        # Kurangi jumlah di transaction items
+        for i, item in enumerate(self.current_transaction.items):
+            if item["product"].product_id == pid:
+                new_qty = current_qty - 1
+                item["qty"] = new_qty
+                self.current_transaction.total -= item["product"].price
+                
+                # Update tampilan tabel
+                new_subtotal = item["product"].price * new_qty
+                self.cart_tree.item(item_id, values=(
+                    pid, item["product"].name, new_qty, new_subtotal))
+                break
+        
+        self.lbl_total.config(text=f"Total: Rp {self.current_transaction.total}")
+
+    def remove_cart_item(self):
+        """Menghapus item yang dipilih dari keranjang"""
+        selected = self.cart_tree.selection()
+        if not selected:
+            messagebox.showwarning("Peringatan", "Pilih item yang ingin dihapus!")
+            return
+        
+        item_id = selected[0]
+        values = self.cart_tree.item(item_id, 'values')
+        pid = values[0]  # ID Produk
+        
+        # Hapus dari transaction items
+        for i, item in enumerate(self.current_transaction.items):
+            if item["product"].product_id == pid:
+                subtotal = item["product"].price * item["qty"]
+                self.current_transaction.total -= subtotal
+                self.current_transaction.items.pop(i)
+                break
+        
+        # Hapus dari tampilan tabel
+        self.cart_tree.delete(item_id)
+        self.lbl_total.config(text=f"Total: Rp {self.current_transaction.total}")
+
+    def cancel_transaction(self):
+        """Membatalkan seluruh transaksi dan mengosongkan keranjang"""
+        if not self.current_transaction.items:
+            messagebox.showinfo("Info", "Keranjang sudah kosong")
+            return
+        
+        confirm = messagebox.askyesno(
+            "Konfirmasi", "Apakah Anda yakin ingin membatalkan transaksi ini?")
+        
+        if confirm:
+            # Reset transaksi
+            self.current_transaction.items = []
+            self.current_transaction.total = 0
+            
+            # Kosongkan tampilan keranjang
+            for item in self.cart_tree.get_children():
+                self.cart_tree.delete(item)
+            
+            self.lbl_total.config(text="Total: Rp 0")
+            messagebox.showinfo("Info", "Transaksi dibatalkan")
 
     def checkout_action(self):
         try:

@@ -19,14 +19,25 @@ class Transaction:
         if quantity <= 0:
             raise ValueError("Jumlah beli harus positif")
 
-        # Validasi stok sementara
+        # Validasi stok sementara dari inventory sebelum ditambahkan ke keranjang
         if quantity > product.stock:
-            raise ValueError(f"Stok tidak cukup. Sisa: {product.stock}")
+            raise ValueError(f"Stok tidak cukup. Stok tersedia: {product.stock}")
 
+        # Validasi stok dari item yang sudah ada di keranjang   
+        for item in self.items:
+            if item["product"].product_id == product.product_id:
+                if item["qty"] + quantity > product.stock:
+                    raise ValueError(f"Stok tidak cukup. Stok tersedia: {product.stock}")
+                item["qty"] += quantity
+                self.total += product.price * quantity
+                return
+
+        # Jika produk belum ada di keranjang, tambahkan sebagai item baru
         self.items.append({"product": product, "qty": quantity})
         self.total += product.price * quantity
 
     def checkout(self, inventory_system):
+        """Proses checkout: kurangi stok dan simpan log transaksi"""
         if not self.items:
             raise ValueError("Keranjang kosong")
 
